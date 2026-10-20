@@ -1,0 +1,27 @@
+# ROS 2 build artefacts
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Logs and local data
+*.log
+*.bag
+*.db3
+*.mcap
+
+# Local robot calibration / identifiers (do not publish)
+*calibration*.yaml
+!src/**/config/ur5e_calibration.example.yaml
+
+# Editors / OS
+# browse.vc* covers both C/C++ IntelliSense databases (browse.vc.db and
+# browse.vc.2.db); each of them grows to over a gigabyte.
+.vscode/browse.vc*
+.vscode/settings.local.json
+.DS_Store

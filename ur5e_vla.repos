@@ -1,0 +1,86 @@
+# Pinned third-party dependencies of the UR5e + Robotiq + VLA stack.
+#
+# Usage:
+#     vcs import /home/ws/src < ur5e_vla.repos
+#
+# Everything is built from source (packages.ros.org is not reachable from this
+# environment), so the pins below are the only source of truth for versions.
+# Branches are pinned deliberately:
+#   * ros2_control -> jazzy (the UR .repos would pull `master`, a rolling branch
+#     that does not build against the Jazzy base install),
+#   * ros2_robotiq_gripper -> main (no jazzy branch; supports Jazzy),
+#   * serial -> ros2 (the wSerial ROS 2 package; it is not released for Jazzy
+#     and is not present in the apt index).
+#
+# MoveIt is deliberately NOT listed: it is not needed in the VLA loop and
+# drags in ~40 packages. See ARCHITECTURE.md, section 9.
+
+repositories:
+  # --- Universal Robots -------------------------------------------------
+  universal_robots_driver:
+    type: git
+    url: https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver.git
+    version: jazzy
+  ur_description:
+    type: git
+    url: https://github.com/UniversalRobots/Universal_Robots_ROS2_Description.git
+    version: jazzy
+  ur_client_library:
+    type: git
+    url: https://github.com/UniversalRobots/Universal_Robots_Client_Library.git
+    version: master
+  ur_msgs:
+    type: git
+    url: https://github.com/ros-industrial/ur_msgs.git
+    version: humble-devel
+
+  # --- ros2_control -----------------------------------------------------
+  ros2_control:
+    type: git
+    url: https://github.com/ros-controls/ros2_control.git
+    # Pinned to the Jazzy release tag, NOT to the tip of the `jazzy` branch.
+    # The 4.49.0 development snapshot dropped the transitive include of
+    # lifecycle_msgs/msg/state.hpp from controller_interface_base.hpp, which
+    # breaks ur_controllers (UR driver). Pinning to the release keeps the
+    # source build in sync with the apt-provided rclcpp/lifecycle_msgs.
+    version: 4.48.1
+  ros2_control_cmake:
+    type: git
+    url: https://github.com/ros-controls/ros2_control_cmake.git
+    version: jazzy
+  ros2_controllers:
+    type: git
+    url: https://github.com/ros-controls/ros2_controllers.git
+    version: jazzy
+  kinematics_interface:
+    type: git
+    url: https://github.com/ros-controls/kinematics_interface.git
+    version: jazzy
+  control_msgs:
+    type: git
+    url: https://github.com/ros-controls/control_msgs.git
+    version: jazzy
+  control_toolbox:
+    type: git
+    url: https://github.com/ros-controls/control_toolbox.git
+    version: jazzy
+  realtime_tools:
+    type: git
+    url: https://github.com/ros-controls/realtime_tools.git
+    version: jazzy
+
+  # --- Robotiq 2F-85 gripper -------------------------------------------
+  ros2_robotiq_gripper:
+    type: git
+    url: https://github.com/PickNikRobotics/ros2_robotiq_gripper.git
+    version: main
+  serial:
+    type: git
+    url: https://github.com/tylerjw/serial.git
+    version: ros2
+
+  # --- Camera -----------------------------------------------------------
+  usb_cam:
+    type: git
+    url: https://github.com/ros-drivers/usb_cam.git
+    version: main          # ROS 2 (the `master` branch is ROS 1)

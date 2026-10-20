@@ -1,0 +1,71 @@
+{
+    "name": "ur5e_vla_ros2",
+    "remoteUser": "ros2dev",
+    "build": {
+        "dockerfile": "devcontainer.containerfile",
+        "args": {
+            "USERNAME": "ros2dev",
+            "ROS_DISTRO": "jazzy"
+        }
+    },
+    "workspaceFolder": "/home/ws/src/ur5e_vla_ros2",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/ws/src/ur5e_vla_ros2,type=bind",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "Ranch-Hand-Robotics.rde-ros-2",
+                "ms-python.python",
+                "ms-python.debugpy",
+                "redhat.vscode-xml",
+                "bierner.markdown-mermaid"
+            ]
+        }
+    },
+    "containerEnv": {
+        "DISPLAY": "unix:0",
+        "ROS_AUTOMATIC_DISCOVERY_RANGE": "LOCALHOST",
+        "ROS_DOMAIN_ID": "42",
+        "NVIDIA_VISIBLE_DEVICES": "all",
+        "NVIDIA_DRIVER_CAPABILITIES": "all,compute,utility,video",
+        "VCS_REPOS_FILE": "/home/ws/src/ur5e_vla_ros2/ur5e_vla.repos",
+        "OPENPI_MODELS_DIR": "/home/ws/models"
+    },
+    "runArgs": [
+        "--gpus=all",
+        "--net=host",
+        "-e", "DISPLAY=${env:DISPLAY}",
+        // Robotiq Wrist Camera + 2F gripper connected to the PC over USB.
+        // The single cable exposes: UVC (video) and the CDC-ACM bridges (gripper RS-485).
+        // NOTE: the devices must exist on the host BEFORE the container starts,
+        // otherwise Docker refuses to launch.
+        "--device=/dev/video0:/dev/video0",
+        "--device=/dev/video1:/dev/video1",
+        "--device=/dev/ttyACM0:/dev/ttyACM0",
+        "--device=/dev/ttyACM1:/dev/ttyACM1",
+        // Device group access: video -> camera, dialout -> serial ports.
+        "--group-add", "video",
+        "--group-add", "dialout"
+    ],
+    "mounts": [
+        // GUI forwarding for rviz/Choregraphe.
+        "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
+        "source=/dev/dri,target=/dev/dri,type=bind,consistency=cached",
+        "source=${localEnv:HOME}/.Xauthority,target=/home/ros2dev/.Xauthority,type=bind,consistency=cached",
+        // Agent tooling state (named volumes; ownership fixed in setup).
+        "source=opencode-config,target=/home/ros2dev/.config/opencode,type=volume",
+        "source=opencode-data,target=/home/ros2dev/.local/share/opencode,type=volume",
+        "source=opencode-cache,target=/home/ros2dev/.cache/opencode,type=volume",
+
+        // Third-party repositories (vcs import from ur5e_vla.repos) live in a
+        // volume so they survive container recreation. The bind mount of this
+        // repository is deeper (/home/ws/src/ur5e_vla_ros2) and takes precedence.
+        "source=ur5e-vla-ws-src,target=/home/ws/src,type=volume",
+        "source=ur5e-vla-apt-cache,target=/var/cache/apt,type=volume",
+        "source=ur5e-vla-ws-build,target=/home/ws/build,type=volume",
+        "source=ur5e-vla-ws-install,target=/home/ws/install,type=volume",
+        "source=ur5e-vla-ws-log,target=/home/ws/log,type=volume",
+        // openpi checkpoints (a few GB) - not baked into the container image.
+        "source=ur5e-vla-models,target=/home/ws/models,type=volume"
+    ],
+    "postCreateCommand": "bash .devcontainer/setup-workspace.sh"
+}
