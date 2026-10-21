@@ -37,7 +37,8 @@ from the `ur5e_vla.repos` file and are imported into `/home/ws/src` (a Docker vo
 │   │   └── test/                   #   unit, integration and HITL tests
 │   └── ur5e_vla_bringup/           # a single launch that starts the entire cell
 ├── ur5e_vla.repos                  # dependency declaration (vcs import)
-├── README.md                       # quick start, how to run
+├── requirements-lerobot.txt         # pinned LeRobot (dataset format) for the recorder
+├── README.md                       # project title (filled in at the end of the project)
 └── ARCHITECTURE.md                 # this document
 
 [ROS 2 workspace] /home/ws/
@@ -220,10 +221,11 @@ through to the container.
 Name: Robot description (URDF/xacro)
 
 Description: A single coherent kinematic description of the whole cell: the UR5e from
-`ur_description` plus the Robotiq gripper mounted on the **`flange`** link, and **one**
-`<ros2_control>` block covering both devices. Sharing one description means the arm and the
-gripper live in one `controller_manager`, share one `/joint_states` topic and have a coherent
-TF tree.
+`ur_description` plus the Robotiq gripper mounted on the **`flange`** link. The robot has
+**two** `<ros2_control>` blocks — one per hardware component, as `ros2_control` requires:
+`ur_robot_driver/URPositionHardwareInterface` for the arm and
+`robotiq_driver/RobotiqGripperHardwareInterface` for the gripper. Both are hosted by a single
+`controller_manager`, so the arm and the gripper share one `/joint_states` topic and one TF tree.
 
 Technologies: xacro, `ur_description`, `robotiq_description`.
 
@@ -351,6 +353,14 @@ fine-tuning job reads it. The contents of the dataset — how episodes are valid
 normalisation statistics are computed, how the training config is derived — are documented in
 the `pi0_finetune_pipeline` repository. Here we fix only the format we write, because the
 other repository has to be able to read it without guessing.
+
+**Pinned format version:** the recorder writes **LeRobot v2.1**, not the current v3.0.
+openpi pins a LeRobot snapshot from May 2025 whose `CODEBASE_VERSION` is `v2.1`; the released
+LeRobot 0.6.x writes `v3.0`, which has a different on-disk layout
+(`meta/tasks.parquet` instead of `meta/tasks.jsonl`, several episodes per parquet file). The
+version check in LeRobot only rejects *older* datasets, so a v3 dataset passes it and then
+fails on the structure — a confusing error in the training job. The pin lives in
+`requirements-lerobot.txt` and has to match the one in the training repository.
 
 Key structure:
 
@@ -549,11 +559,19 @@ Keeping the container in sync with the project is mandatory whenever a dependenc
 a new apt package → `devcontainer.containerfile`; a new repository → `ur5e_vla.repos`;
 a new volume → `devcontainer.json`.
 
+**Runtime dependencies that come from apt, not from `.repos`:** the source-built
+`controller_manager` links `libbackward.so`, `librsl.so` and `libpal_statistics.so`, so the
+image installs `ros-jazzy-backward-ros`, `ros-jazzy-rsl` and `ros-jazzy-pal-statistics`; the
+`spawner` additionally needs `python3-filelock`. The same applies to
+`ros-jazzy-ackermann-msgs`, which the steering controllers of the `ros2_controllers`
+metapackage require. Everything that is *project specific* — the UR driver, the Robotiq driver,
+`ros2_control`, the controllers, `usb_cam` — is built from source via `.repos`.
+
 ### 8.2 Test matrix
 
 | Level | Scope | Environment | CI |
 |---|---|---|---|
-| **L0 static** | `ament_lint_auto`, `flake8`, `pep257`, `clang-format`, `xmllint` | hardware-free | ✅ |
+| **L0 static** | planned: `ament_lint_auto`, `flake8`, `pep257`, `xmllint` — not wired up yet; `ament_copyright` waits for the license decision | hardware-free | ⏳ |
 | **L1 unit** | xacro rendering → URDF validation; YAML validation; config ↔ URDF consistency | hardware-free | ✅ |
 | **L2 integration** | `launch_testing`: controller activation, `/joint_states`, gripper action on mock hardware | hardware-free | ✅ |
 | **L3 HITL** | real gripper: activate → close → position rises → open → position falls | with hardware | ❌ (opt-in) |
@@ -562,12 +580,14 @@ a new volume → `devcontainer.json`.
 
 **Key L1 assertions** (they catch real classes of bugs):
 
-- exactly one `<ros2_control>` block in the rendered URDF,
+- exactly two `<ros2_control>` blocks, with the upstream plugins
+  (`ur_robot_driver/URPositionHardwareInterface`, `robotiq_driver/RobotiqGripperHardwareInterface`),
 - the gripper is a child of the `flange` link (not of a separate `world`),
 - `slave_address` present and equal to the value in the hardware configuration,
 - the joint name in the controller equals the joint in the URDF,
 - `max_velocity_interface` / `max_effort_interface` point at the interfaces actually exported by
-  `robotiq_driver` (`set_gripper_max_velocity`, `set_gripper_max_effort`).
+  `robotiq_driver` (`set_gripper_max_velocity`, `set_gripper_max_effort`),
+- mocking the arm and mocking the gripper are independent.
 
 **L2** runs on `mock_components/GenericSystem` (`use_fake_hardware:=true`) — no serial port is
 opened, so the tests are deterministic and never collide with real hardware use.
@@ -602,9 +622,9 @@ opened, so the tests are deterministic and never collide with real hardware use.
 
 | Phase | Scope | Status |
 |---|---|---|
-| **0** | `.repos` workspace, bootstrap, devcontainer synchronisation | planned |
-| **1** | bring-up: UR5e, calibration, gripper, camera — third-party drivers only | planned |
-| **2** | one URDF, one `controller_manager`, `ParallelGripperCommand` action, tests L0–L2 | planned |
+| **0** | `.repos` workspace, bootstrap, devcontainer synchronisation | ✅ done |
+| **1** | bring-up: UR5e, calibration, gripper, camera — third-party drivers only | ✅ done (gripper and camera verified on hardware; the arm needs the robot in Remote Control) |
+| **2** | one URDF, one `controller_manager`, `ParallelGripperCommand` action, tests L0–L2 | ✅ done |
 | **3** | `dataset_recorder` (LeRobot) + demonstration generation (waypoints, teleop) | planned |
 | **4** | `policy_bridge` + openpi policy server, watchdog, tests L5 | planned |
 | **5** | fine-tuning in the `pi0_finetune_pipeline` repository, checkpoint integration | planned |
@@ -638,7 +658,11 @@ opened, so the tests are deterministic and never collide with real hardware use.
 
 **Primary Contact/Team:** project owner / robotics team
 
-**Date of Last Update:** 2026-10-20
+**License:** not yet decided — the package manifests carry a `TODO` placeholder and no
+`LICENSE` file is committed yet. The third-party components keep their own permissive licenses
+(BSD-3-Clause / MIT), so either Apache-2.0 or MIT remains possible.
+
+**Date of Last Update:** 2026-10-21
 
 **Document Version:** 0.1.0 (living document)
 
