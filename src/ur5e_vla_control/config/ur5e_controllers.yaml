@@ -1,0 +1,68 @@
+# Controllers of the whole cell (arm + gripper) served by ONE controller_manager.
+#
+# The node lives in the root namespace, so the plain node names below match
+# both the controller_manager node and the controller nodes it spawns.
+#
+# NOTE on the arm controller: `ur_controllers/ScaledJointTrajectoryController`
+# scales velocity and acceleration with the speed slider on the pendant, which
+# is the safety feature we want on a real robot. It claims the
+# `speed_scaling/speed_scaling_factor` interface provided by the UR hardware.
+controller_manager:
+  ros__parameters:
+    update_rate: 100
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+    scaled_joint_trajectory_controller:
+      type: ur_controllers/ScaledJointTrajectoryController
+    robotiq_gripper_controller:
+      type: parallel_gripper_action_controller/GripperActionController
+    robotiq_activation_controller:
+      type: robotiq_controllers/RobotiqActivationController
+
+scaled_joint_trajectory_controller:
+  ros__parameters:
+    joints:
+      - shoulder_pan_joint
+      - shoulder_lift_joint
+      - elbow_joint
+      - wrist_1_joint
+      - wrist_2_joint
+      - wrist_3_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    constraints:
+      stopped_velocity_tolerance: 0.2
+      goal_time: 0.0
+      shoulder_pan_joint: {trajectory: 0.2, goal: 0.1}
+      shoulder_lift_joint: {trajectory: 0.2, goal: 0.1}
+      elbow_joint: {trajectory: 0.2, goal: 0.1}
+      wrist_1_joint: {trajectory: 0.2, goal: 0.1}
+      wrist_2_joint: {trajectory: 0.2, goal: 0.1}
+      wrist_3_joint: {trajectory: 0.2, goal: 0.1}
+    speed_scaling_interface_name: speed_scaling/speed_scaling_factor
+
+robotiq_gripper_controller:
+  ros__parameters:
+    joint: robotiq_85_left_knuckle_joint
+    # Speed and force of the jaws, taken from the interfaces robotiq_driver
+    # exports next to the position interface. They do not exist on mock
+    # hardware - see ur5e_controllers_mock.yaml.
+    max_velocity_interface: "robotiq_85_left_knuckle_joint/set_gripper_max_velocity"
+    max_velocity: 0.5
+    max_effort_interface: "robotiq_85_left_knuckle_joint/set_gripper_max_effort"
+    max_effort: 50.0
+    state_interfaces: ["position", "velocity"]
+    allow_stalling: true
+    stall_timeout: 0.05
+    goal_tolerance: 0.02
+
+robotiq_activation_controller:
+  ros__parameters:
+    # Activates the gripper (rACT=1) right after the controller starts.
+    default: true

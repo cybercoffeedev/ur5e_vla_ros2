@@ -1,0 +1,29 @@
+# Wrist Camera (Robotiq) as seen through the USB CDC/UVC interface.
+#
+# The same cable also carries the RS-485 link to the gripper, so the camera
+# and the gripper are physically coupled - see ARCHITECTURE.md, section 8.4.
+/**:
+  ros__parameters:
+    video_device: "/dev/video0"
+    camera_name: "wrist_camera"
+    frame_id: "wrist_camera"
+    image_width: 640
+    image_height: 480
+    framerate: 30.0
+    publish_rate: 30.0
+    io_method: "mmap"
+    # The wrist camera streams MJPEG; decode to RGB.
+    pixel_format: "mjpeg2rgb"
+    av_device_format: "YUV422P"
+    camera_info_url: "package://usb_cam/config/camera_info.yaml"
+    brightness: -1
+    contrast: -1
+    saturation: -1
+    sharpness: -1
+    gain: -1
+    auto_white_balance: true
+    white_balance: 4000
+    autoexposure: true
+    exposure: 100
+    autofocus: false
+    focus: -1

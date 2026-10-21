@@ -1,0 +1,149 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="ur5e_robotiq_2f_85">
+
+  <!--
+    Robot description of the whole cell: a UR5e with a Robotiq 2F-85 gripper
+    bolted to the tool flange.
+
+    It is composed from three upstream macros instead of including
+    ur_robot_driver/urdf/ur.urdf.xacro, because the gripper has to be attached
+    to the `flange` link, which is created inside the arm kinematics:
+
+      xacro:ur_robot        - arm kinematics (ur_description), creates `flange`
+      xacro:ur_ros2_control - arm hardware (ur_robot_driver), RTDE client
+      xacro:robotiq_gripper - gripper geometry (robotiq_description)
+
+    The result is ONE robot with TWO <ros2_control> blocks - one per hardware
+    component - hosted by a single controller_manager. That gives us a single
+    /joint_states for the arm and the gripper, and a coherent TF tree.
+  -->
+
+  <!-- ==================== arguments ==================== -->
+  <xacro:arg name="name" default="ur5e"/>
+  <xacro:arg name="ur_type" default="ur5e"/>
+  <xacro:arg name="tf_prefix" default=""/>
+
+  <!-- arm -->
+  <xacro:arg name="use_mock_hardware" default="false"/>
+  <xacro:arg name="robot_ip" default="0.0.0.0"/>
+  <xacro:arg name="headless_mode" default="false"/>
+  <xacro:arg name="kinematics_params"
+             default="$(find ur_description)/config/$(arg ur_type)/default_kinematics.yaml"/>
+  <xacro:arg name="joint_limit_params"
+             default="$(find ur_description)/config/$(arg ur_type)/joint_limits.yaml"/>
+  <xacro:arg name="physical_params"
+             default="$(find ur_description)/config/$(arg ur_type)/physical_parameters.yaml"/>
+  <xacro:arg name="visual_params"
+             default="$(find ur_description)/config/$(arg ur_type)/visual_parameters.yaml"/>
+  <xacro:arg name="initial_positions_file"
+             default="$(find ur_description)/config/initial_positions.yaml"/>
+
+  <!-- gripper -->
+  <xacro:arg name="use_mock_gripper" default="false"/>
+  <xacro:arg name="com_port" default="/dev/ttyACM0"/>
+  <xacro:arg name="baudrate" default="115200"/>
+  <xacro:arg name="slave_address" default="0x2"/>
+  <xacro:arg name="gripper_closed_position" default="0.7929"/>
+  <xacro:arg name="gripper_speed_multiplier" default="1.0"/>
+  <xacro:arg name="gripper_force_multiplier" default="0.5"/>
+  <xacro:arg name="gripper_max_speed" default="0.150"/>
+  <xacro:arg name="gripper_max_force" default="235.0"/>
+
+  <!-- ==================== includes ==================== -->
+  <xacro:include filename="$(find ur_description)/urdf/ur_macro.xacro"/>
+  <xacro:include filename="$(find ur_robot_driver)/urdf/ur.ros2_control.xacro"/>
+  <xacro:include filename="$(find robotiq_description)/urdf/robotiq_2f_85_macro.urdf.xacro"/>
+
+  <xacro:property name="initial_positions_file" default="$(arg initial_positions_file)"/>
+
+  <link name="world"/>
+
+  <!-- ==================== arm: kinematics ==================== -->
+  <xacro:ur_robot
+    name="$(arg name)"
+    tf_prefix="$(arg tf_prefix)"
+    parent="world"
+    joint_limits_parameters_file="$(arg joint_limit_params)"
+    kinematics_parameters_file="$(arg kinematics_params)"
+    physical_parameters_file="$(arg physical_params)"
+    visual_parameters_file="$(arg visual_params)"
+    safety_limits="false"
+    safety_pos_margin="0.15"
+    safety_k_position="20">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </xacro:ur_robot>
+
+  <!-- ==================== arm: hardware ==================== -->
+  <xacro:ur_ros2_control
+    name="$(arg name)"
+    tf_prefix="$(arg tf_prefix)"
+    kinematics_parameters_file="$(arg kinematics_params)"
+    use_mock_hardware="$(arg use_mock_hardware)"
+    headless_mode="$(arg headless_mode)"
+    initial_positions="${xacro.load_yaml(initial_positions_file)}"
+    robot_ip="$(arg robot_ip)"
+    script_filename=""
+    output_recipe_filename=""
+    input_recipe_filename=""
+    ur_type="$(arg ur_type)"
+  />
+
+  <!-- ==================== gripper: geometry ==================== -->
+  <!--
+    Mounted on the ROS-Industrial 'flange' frame. include_ros2_control is
+    disabled because the upstream xacro does not expose the slave_address
+    parameter this gripper needs - see the hardware block below.
+  -->
+  <xacro:robotiq_gripper
+    name="RobotiqGripperHardwareInterface"
+    prefix=""
+    parent="$(arg tf_prefix)flange"
+    use_fake_hardware="$(arg use_mock_gripper)"
+    include_ros2_control="false">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </xacro:robotiq_gripper>
+
+  <!-- ==================== gripper: hardware ==================== -->
+  <ros2_control name="RobotiqGripperHardwareInterface" type="system">
+    <hardware>
+      <xacro:if value="$(arg use_mock_gripper)">
+        <plugin>mock_components/GenericSystem</plugin>
+        <param name="mock_sensor_commands">false</param>
+        <param name="state_following_offset">0.0</param>
+        <param name="calculate_dynamics">true</param>
+        <!-- The activation controller claims two gpio *command* interfaces;
+             mock_components only exports those on request. -->
+        <param name="mock_gpio_commands">true</param>
+      </xacro:if>
+      <xacro:unless value="$(arg use_mock_gripper)">
+        <plugin>robotiq_driver/RobotiqGripperHardwareInterface</plugin>
+        <param name="COM_port">$(arg com_port)</param>
+        <param name="baudrate">$(arg baudrate)</param>
+        <!-- Hex string, as expected by robotiq_driver. This unit answers on
+             slave 2; the upstream default of 9 does not reply. -->
+        <param name="slave_address">$(arg slave_address)</param>
+        <param name="gripper_closed_position">$(arg gripper_closed_position)</param>
+        <param name="gripper_speed_multiplier">$(arg gripper_speed_multiplier)</param>
+        <param name="gripper_force_multiplier">$(arg gripper_force_multiplier)</param>
+        <param name="gripper_max_speed">$(arg gripper_max_speed)</param>
+        <param name="gripper_max_force">$(arg gripper_max_force)</param>
+      </xacro:unless>
+    </hardware>
+
+    <!-- The single actuated joint of the gripper (left knuckle). -->
+    <joint name="robotiq_85_left_knuckle_joint">
+      <command_interface name="position"/>
+      <state_interface name="position">
+        <param name="initial_value">$(arg gripper_closed_position)</param>
+      </state_interface>
+      <state_interface name="velocity"/>
+    </joint>
+
+    <!-- Re-activate the gripper (re-runs the calibration) - upstream GPIO. -->
+    <gpio name="reactivate_gripper">
+      <command_interface name="reactivate_gripper_cmd"/>
+      <command_interface name="reactivate_gripper_response"/>
+    </gpio>
+  </ros2_control>
+
+</robot>

@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>ur5e_vla_control</name>
+  <version>0.1.0</version>
+  <description>
+    ros2_control configuration of the UR5e cell: one controller manager for
+    the arm (ur_robot_driver) and the Robotiq 2F-85 gripper (robotiq_driver),
+    plus the launch file that starts the whole stack.
+  </description>
+  <maintainer email="cybercoffeedev@proton.me">cybercoffeedev</maintainer>
+  <license>TODO</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <exec_depend>controller_manager</exec_depend>
+  <exec_depend>joint_state_broadcaster</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>parallel_gripper_controller</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>robotiq_controllers</exec_depend>
+  <exec_depend>robotiq_driver</exec_depend>
+  <exec_depend>ur_controllers</exec_depend>
+  <exec_depend>ur_robot_driver</exec_depend>
+  <exec_depend>xacro</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>launch_testing</test_depend>
+  <test_depend>launch_testing_ament_cmake</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
