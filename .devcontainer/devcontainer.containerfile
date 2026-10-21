@@ -31,6 +31,8 @@ ENV SHELL /bin/bash
 RUN apt-get update && apt-get install -y \
     # vcs import -- the .repos workflow
     python3-vcstool \
+    # rosdep resolves the system dependencies of the packages we build
+    python3-rosdep \
     # tooling
     git curl wget vim tmux \
     python3-pip \
@@ -38,6 +40,8 @@ RUN apt-get update && apt-get install -y \
     python3-serial usbutils v4l-utils \
     # image processing (dataset recorder, policy bridge) and mp4 encoding (LeRobot)
     python3-opencv ffmpeg \
+    # python dependency of the controller_manager spawner
+    python3-filelock \
     # generic ROS tooling used by the launch files
     ros-${ROS_DISTRO}-cv-bridge \
     ros-${ROS_DISTRO}-image-transport \
@@ -45,6 +49,11 @@ RUN apt-get update && apt-get install -y \
     # message package needed by the steering controllers of the ros2_controllers
     # metapackage (robotiq_description depends on that metapackage)
     ros-${ROS_DISTRO}-ackermann-msgs \
+    # support libraries of the source-built controller_manager: it links
+    # libbackward.so, librsl.so and libpal_statistics.so
+    ros-${ROS_DISTRO}-backward-ros \
+    ros-${ROS_DISTRO}-rsl \
+    ros-${ROS_DISTRO}-pal-statistics \
     && rm -rf /var/lib/apt/lists/*
 
 # ********************************************************

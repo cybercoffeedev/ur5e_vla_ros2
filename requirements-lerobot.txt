@@ -1,0 +1,20 @@
+# LeRobot runtime dependency.
+#
+# The dataset recorder (phase 3) writes LeRobot datasets with the `lerobot`
+# Python package. The version matters: openpi pins an older LeRobot whose
+# on-disk format is v2.1, while the current release writes v3.0 - a different
+# layout (meta/tasks.parquet instead of meta/tasks.jsonl, several episodes per
+# parquet file). A v3 dataset cannot be read by the pinned training code, and
+# the version check in LeRobot does not catch it (it only rejects *older*
+# datasets).
+#
+# Therefore: the recorder and the fine-tuning repository MUST use the same
+# LeRobot commit - the one openpi pins.
+#
+# Install in a separate virtualenv, so that torch (LeRobot) and JAX (openpi)
+# do not end up in the same environment:
+#
+#     python3 -m venv ~/venvs/lerobot
+#     ~/venvs/lerobot/bin/pip install -r requirements-lerobot.txt
+#
+lerobot @ git+https://github.com/huggingface/lerobot@0cf864870cf29f4738d3ade893e6fd13fbd7cdb5

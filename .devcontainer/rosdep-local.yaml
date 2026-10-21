@@ -1,0 +1,47 @@
+# Local rosdep rules.
+#
+# The rosdep index in this environment does not resolve the buildtool keys of
+# our own packages (ament_python / ament_cmake) nor the ROS 2 support
+# libraries of the source-built controller_manager. The upstream rules live in
+# the distro-specific part of the rosdistro index, which is not always
+# reachable (the ROS apt mirror is behind a proxy with a broken certificate).
+#
+# This file is registered by .devcontainer/setup-workspace.sh, so `rosdep
+# install` can resolve the system dependencies of the packages we build from
+# source. It only covers keys that are missing from the index - everything
+# else is resolved normally.
+ament_python:
+  ubuntu: [ros-jazzy-ament-package]
+
+ament_cmake:
+  ubuntu: [ros-jazzy-ament-cmake]
+
+ament_cmake_auto:
+  ubuntu: [ros-jazzy-ament-cmake-auto]
+
+ament_cmake_core:
+  ubuntu: [ros-jazzy-ament-cmake-core]
+
+ament_cmake_export_dependencies:
+  ubuntu: [ros-jazzy-ament-cmake-export-dependencies]
+
+ament_cmake_export_targets:
+  ubuntu: [ros-jazzy-ament-cmake-export-targets]
+
+ament_cmake_python:
+  ubuntu: [ros-jazzy-ament-cmake-python]
+
+ament_cmake_test:
+  ubuntu: [ros-jazzy-ament-cmake-test]
+
+ament_cmake_target_dependencies:
+  ubuntu: [ros-jazzy-ament-cmake-target-dependencies]
+
+rsl:
+  ubuntu: [ros-jazzy-rsl]
+
+backward_ros:
+  ubuntu: [ros-jazzy-backward-ros]
+
+pal_statistics:
+  ubuntu: [ros-jazzy-pal-statistics]

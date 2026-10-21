@@ -48,6 +48,9 @@ repositories:
     type: git
     url: https://github.com/ros-controls/ros2_control_cmake.git
     version: jazzy
+  # NOTE: the support libraries of controller_manager (backward_ros, rsl,
+  # pal_statistics) are NOT listed here - they are released for Jazzy and come
+  # from apt, see devcontainer.containerfile.
   ros2_controllers:
     type: git
     url: https://github.com/ros-controls/ros2_controllers.git

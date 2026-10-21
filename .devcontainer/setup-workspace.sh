@@ -54,7 +54,22 @@ else
     printf '%s' "${REPOS_HASH}" > "${IMPORT_MARKER}"
 fi
 
-# --- 3. build --------------------------------------------------------------
+# --- 3. system dependencies of the imported packages ----------------------
+# The packages we build from source need system libraries that the ROS base
+# image does not necessarily carry (e.g. realtime_tools needs libcap-dev for
+# sys/capability.h). rosdep resolves them from the package manifests, so the
+# list does not have to be maintained by hand.
+log "Resolving system dependencies with rosdep"
+sudo apt-get update -qq || true
+# Register our local rules (ament_python & friends are missing from the
+# rosdep index in this environment).
+sudo sh -c "echo 'yaml file://${REPO_DIR}/.devcontainer/rosdep-local.yaml' \
+    > /etc/ros/rosdep/sources.list.d/10-local.list" || true
+rosdep update --rosdistro "${ROS_DISTRO}" >/dev/null 2>&1 || true
+rosdep install --from-paths "${WS_ROOT}/src" --ignore-src --rosdistro "${ROS_DISTRO}" -y \
+    || fail "rosdep could not install the system dependencies"
+
+# --- 4. build --------------------------------------------------------------
 source "/opt/ros/${ROS_DISTRO}/setup.bash"
 
 # Build only what we need: our own packages when they exist, otherwise the
@@ -91,7 +106,7 @@ else
     printf '%s' "${REPOS_HASH}" > "${BUILD_MARKER}"
 fi
 
-# --- 4. done ---------------------------------------------------------------
+# --- 5. done ---------------------------------------------------------------
 sudo chown -R "$(whoami):$(whoami)" "${WS_ROOT}/build" "${WS_ROOT}/install" \
     "${WS_ROOT}/log" 2>/dev/null || true
 
