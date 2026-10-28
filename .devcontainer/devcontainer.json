@@ -1,0 +1,19 @@
+{
+    "name": "ur5e-vla (ROS 2 Jazzy)",
+    "build": {
+        "dockerfile": "Containerfile"
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/node:2": {
+            "version": "lts"
+        }
+    },
+    "containerEnv": {
+        "XDG_DATA_HOME": "/home/vscode/.opencode/data",
+        "XDG_CONFIG_HOME": "/home/vscode/.opencode/config"
+    },
+    "mounts": [
+        "source=opencode-data,target=/home/vscode/.opencode,type=volume"
+    ],
+    "postCreateCommand": "npm install -g @opencode/cli"
+}

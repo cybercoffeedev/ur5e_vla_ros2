@@ -1,0 +1,86 @@
+# --- Operating system ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Editors and IDEs ---
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+*.swp
+*.swo
+*~
+.cache/clangd/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+site-packages/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyright/
+.hypothesis/
+.tox/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# --- C++, CMake, colcon ---
+build/
+install/
+log/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+*.o
+*.a
+*.so
+
+# --- ROS 2 recordings and run artifacts ---
+*.bag
+*.db3
+*.mcap
+recordings/
+runs/
+artifacts/
+
+# --- Checkpoints, weights, normalization statistics ---
+checkpoints/
+*.pt
+*.pth
+*.safetensors
+*.ckpt
+*.onnx
+*.engine
+*.h5
+*.npz
+
+# --- MuJoCo ---
+*.mjb
+mjkey.txt
+
+# --- Secrets and local configuration ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+config/local/
+config/*.local.yaml
+
+# --- Docker ---
+docker-compose.override.yml
+
+# --- Lockfiles belong in the repository ---
+!**/devcontainer-lock.json
+!uv.lock
+!poetry.lock

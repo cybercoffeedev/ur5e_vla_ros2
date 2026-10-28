@@ -1,0 +1,29 @@
+FROM docker.io/library/ros:jazzy-ros-base
+
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=${USER_UID}
+
+# The Ubuntu rootfs ships an account on UID 1000; release the UID before creating the workspace user.
+RUN if getent passwd "${USER_UID}" >/dev/null; then \
+        userdel -r "$(getent passwd "${USER_UID}" | cut -d: -f1)" 2>/dev/null || true; \
+    fi \
+    && if getent group "${USER_GID}" >/dev/null; then \
+        groupdel "$(getent group "${USER_GID}" | cut -d: -f1)" 2>/dev/null || true; \
+    fi
+
+RUN groupadd --gid "${USER_GID}" "${USERNAME}" \
+    && useradd --uid "${USER_UID}" --gid "${USER_GID}" -m -s /bin/bash "${USERNAME}" \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends sudo python3-venv \
+    && rm -rf /var/lib/apt/lists/* \
+    && echo "${USERNAME} ALL=(root) NOPASSWD:ALL" > "/etc/sudoers.d/${USERNAME}" \
+    && chmod 0440 "/etc/sudoers.d/${USERNAME}"
+
+# A named volume inherits ownership from the image path; without this directory the volume is root-owned.
+RUN install -d -o "${USERNAME}" -g "${USERNAME}" "/home/${USERNAME}/.opencode" \
+    && printf '%s\n' '[ -f /opt/ros/jazzy/setup.bash ] && . /opt/ros/jazzy/setup.bash' \
+        >> "/home/${USERNAME}/.bashrc" \
+    && chown "${USERNAME}:${USERNAME}" "/home/${USERNAME}/.bashrc"
+
+USER ${USERNAME}
