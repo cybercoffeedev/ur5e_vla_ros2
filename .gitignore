@@ -67,6 +67,11 @@ checkpoints/
 *.mjb
 mjkey.txt
 
+# Fetched by scripts/fetch_mujoco_ur5e.py; only the manifest, licence, and provenance are tracked.
+/sim/mujoco/ur5e/ur5e.xml
+/sim/mujoco/ur5e/scene.xml
+/sim/mujoco/ur5e/assets/
+
 # --- Secrets and local configuration ---
 .env
 .env.*

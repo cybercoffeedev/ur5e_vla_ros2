@@ -1,0 +1,21 @@
+# Tool configuration only. This file does not define a Python package; each ROS 2 package under
+# src/ carries its own package.xml and setup.py.
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src"]
+extend-exclude = ["build", "install", "log"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+files = ["src/vla_sim/vla_sim"]
+
+[[tool.mypy.overrides]]
+module = ["mujoco.*", "rclpy.*"]
+ignore_missing_imports = true
